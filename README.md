@@ -1,36 +1,42 @@
-# home-automation
-Smart Home Monitoring System
-This is a smart home monitoring system consisting of an Arduino Uno board and an ESP8266 Wi-Fi module. The system uses various sensors to monitor the home environment, including a gas sensor and a water level sensor, and controls appliances such as lights, fan, and water pump based on sensor readings.
-
-The system communicates wirelessly with a remote device such as a smartphone or computer via Wi-Fi, allowing users to monitor the home environment and control appliances from a distance.
+Home Automation System
+This is a simple home automation system that controls appliances based on sensor values. The system consists of an Arduino board and an ESP8266 module. The Arduino board reads sensor values and controls appliances based on those values. The ESP8266 module communicates with the Arduino board over software serial and receives sensor values and appliance states. It then sends the data over Wi-Fi to a server for remote monitoring and control.
 
 Components
-The following components are used in the system:
-
-Arduino Uno board
-ESP8266 Wi-Fi module
-Gas sensor
-Water level sensor
-Water pump
-Lights (2)
-Fan
-Arduino Part
-The Arduino Uno board reads sensor values and controls appliances based on the readings. The gas sensor and water level sensor are connected to analog pins of the Arduino board. The water pump, lights, and fan are controlled via digital pins of the board.
-
-The board communicates with the ESP8266 Wi-Fi module via software serial. It also sends sensor readings and appliance states to the ESP8266 module over serial in JSON format.
+-Arduino Uno board
+-ESP8266 module
+-Gas sensor
+-Water level sensor
+-Water pump
+-2 lights
+-Fan
+-Arduino Part
+The Arduino board reads the values from the gas and water level sensors and controls the water pump, lights, and fan based on the sensor values. It also sends the sensor values and appliance states over software serial to the ESP8266 module.
 
 ESP8266 Part
-The ESP8266 Wi-Fi module receives sensor readings and appliance states from the Arduino board over serial in JSON format. It decodes the JSON data and stores each field in a separate variable. It also prints the sensor readings and appliance states to the serial monitor.
+The ESP8266 module receives the sensor values and appliance states from the Arduino board over software serial. It then encodes the data in JSON format and sends it over Wi-Fi to a server for remote monitoring and control. The data is decoded and stored on the server, and the user can view the current sensor values and appliance states and control the appliances remotely.
 
-The module can be connected to a Wi-Fi network and act as a web server, allowing remote monitoring and control of the home environment via a web interface.
+To run the ESP8266 code, you need to include the following libraries:
 
-Usage
-To use the system, follow these steps:
+-ESP8266WiFi
+-ArduinoJson
+-SoftwareSerial
+You also need to set up your Wi-Fi credentials and server details in the code.
 
-Connect the components as shown in the circuit diagram.
-Upload the Arduino code to the Arduino Uno board.
-Upload the ESP8266 code to the ESP8266 Wi-Fi module.
-Connect the ESP8266 module to a Wi-Fi network.
-Open the serial monitor to view the sensor readings and appliance states.
-Use a remote device such as a smartphone or computer to connect to the ESP8266 module and control the appliances via the web interface.
-Note: Make sure to install the required libraries (SoftwareSerial and ArduinoJson) before uploading the code to the respective devices.
+Setup
+Connect the gas sensor to the A0 pin of the Arduino board.
+Connect the water level sensor to the A1 pin of the Arduino board.
+Connect the water pump to pin 8 of the Arduino board.
+Connect light 1 to pin 9 of the Arduino board.
+Connect light 2 to pin 10 of the Arduino board.
+Connect the fan to pin 11 of the Arduino board.
+Connect the RX pin of the ESP8266 module to pin 3 of the Arduino board.
+Connect the TX pin of the ESP8266 module to pin 2 of the Arduino board.
+Power up the Arduino board and ESP8266 module.
+Upload the Arduino code to the Arduino board.
+Upload the ESP8266 code to the ESP8266 module.
+Monitor the sensor values and appliance states on the remote server.
+Future Improvements
+Add more sensors to monitor the environment, such as temperature and humidity sensors.
+Add more appliances to control, such as a security system and a smart door lock.
+Improve the user interface for remote monitoring and control.
+Add machine learning algorithms to learn and adapt to user preferences and behavior.
