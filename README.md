@@ -3,13 +3,13 @@ The project is hosted at [easyeda](https://oshwlab.com/krish.shoaib55/home-autom
 This is a simple home automation system that controls appliances based on sensor values. The system consists of an Arduino board and an ESP8266 module. The Arduino board reads sensor values and controls appliances based on those values. The ESP8266 module communicates with the Arduino board over software serial and receives sensor values and appliance states. It then sends the data over Wi-Fi to a server for remote monitoring and control.
 
 ## Components
-+Arduino Uno board
-+ESP8266 module
-+Gas sensor
-+Water level sensor
-+Water pump
-+2 lights
-+Fan
++ Arduino Uno board
++ ESP8266 module
++ Gas sensor
++ Water level sensor
++ Water pump
++ 2 lights
++ Fan
 
 ## Arduino Part
 The Arduino board reads the values from the gas and water level sensors and controls the water pump, lights, and fan based on the sensor values. It also sends the sensor values and appliance states over software serial to the ESP8266 module.
