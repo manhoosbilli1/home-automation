@@ -1,4 +1,4 @@
-*# Home Automation System*
+# Home Automation System
 The project is hosted at [easyeda](https://oshwlab.com/krish.shoaib55/home-automation)
 This is a simple home automation system that controls appliances based on sensor values. The system consists of an Arduino board and an ESP8266 module. The Arduino board reads sensor values and controls appliances based on those values. The ESP8266 module communicates with the Arduino board over software serial and receives sensor values and appliance states. It then sends the data over Wi-Fi to a server for remote monitoring and control.
 
