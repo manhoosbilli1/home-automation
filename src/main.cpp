@@ -23,6 +23,8 @@ uint8_t fanPin = 11;
 uint8_t lockPin = 8;
 #define DHTPININSIDE A0
 #define DHTPINOUTSIDE A1
+#define sensorStatusPin 6
+
 
 //Define variables to store sensor values and appliance states
 uint8_t gasSensorValue;
@@ -61,6 +63,7 @@ void parseJson(String jsonString);
 
 void setup() {
   //Initialize serial communication
+  pinMode(sensorStatusPin, OUTPUT); 
 
 
 /*MQ2 settup*/
@@ -128,10 +131,33 @@ void loop() {
   //Read from serial and update data. 
   if (espSerial.available() > 0) {
     //receive it via json
-    String message = espSerial.readStringUntil('\n');
-    parseJson(message); 
+    char data = espSerial.read();
+    switch(data)
+    {
+      case 'A':
+      digitalWrite(fanPin, !digitalRead(fanPin));
+      break; 
+
+      case 'B':
+      digitalWrite(lockPin, !digitalRead(lockPin));
+      break;
+
+      case 'C':
+      digitalWrite(lightPin, !digitalRead(lightPin));
+      break;
+
+      case 'D':
+      digitalWrite(waterPumpPin, !digitalRead(waterPumpPin));
+      break; 
+    }
+    data = 0;
+
   }
-  //Read sensor values
+
+  unsigned int prevTime;
+  if(millis() - prevTime >= 1000)
+  {
+  //Read sensor values and send data to esp after every 1 second. 
   MQ2.update(); // Update data, the arduino will read the voltage from the analog pin
   gasSensorValue = MQ2.readSensor();
   //using sonar for detecting water level
@@ -150,10 +176,17 @@ void loop() {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
-  //control appliances automatically and manually
-  //TODO: time the incoming and outgoing data
-  //TODO: how will it know when its in automatic mode or manual mode.
-
+  if((waterLevelSensorValue != 0 && waterLevelSensorValue < 200) || gasSensorValue != 0  ||
+   humInside != 0 || tempOutside != 0)
+  {
+    //means all sensors are working 
+    digitalWrite(sensorStatusPin, LOW);
+  }
+  else 
+  {
+    //something's wrong 
+    digitalWrite(sensorStatusPin, HIGH); 
+  }
 
   waterPumpState = digitalRead(waterPumpPin);
   lightState = digitalRead(lightPin);
@@ -181,16 +214,9 @@ void loop() {
   // espSerial.println(jsonString);  
   Serial.print(jsonString);
 
-  if(updated == true)
-  {
-    digitalWrite(fanPin, fanState);
-    digitalWrite(lightPin, lightState);
-    digitalWrite(lockPin, lockState);
-    updated = false; 
+  prevTime = millis(); 
   }
-delay(1000);
 }
-
 
 void parseJson(String jsonString) {
   DynamicJsonDocument jsonDoc(200);
