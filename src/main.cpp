@@ -12,11 +12,11 @@ NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and
 
 
 //Define software serial pins for ESP8266
-SoftwareSerial espSerial(3, 2); // RX, TX
+SoftwareSerial espSerial(4, 3); // RX, TX
 
 //Define sensor and appliance pins
-uint8_t gasSensorPin = A0;
-uint8_t waterLevelSensorPin = A1;
+uint8_t gasSensorPin = A2;
+// uint8_t waterLevelSensorPin = A1;
 uint8_t waterPumpPin = 10;
 uint8_t lightPin = 9;
 uint8_t fanPin = 11;
@@ -24,7 +24,8 @@ uint8_t lockPin = 8;
 #define DHTPININSIDE A0
 #define DHTPINOUTSIDE A1
 #define sensorStatusPin 6
-
+#define TEMPLIMITPIN 7 
+#define WATERSENSORPIN 5
 
 //Define variables to store sensor values and appliance states
 uint8_t gasSensorValue;
@@ -59,14 +60,54 @@ MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, Pin, Type);
 
 
 //declaring the function
-void parseJson(String jsonString);
+void parseJson(String);
+void getStatus();
+void getSerial(); 
+void MQ2Init();
 
 void setup() {
-  //Initialize serial communication
+  MQ2Init(); 
+  //Configure pins
+  pinMode(waterPumpPin, OUTPUT);
+  pinMode(lightPin, OUTPUT);
+  pinMode(fanPin, OUTPUT);
+  pinMode(lockPin, OUTPUT);
   pinMode(sensorStatusPin, OUTPUT); 
+  pinMode(TEMPLIMITPIN, OUTPUT); 
+  pinMode(WATERSENSORPIN, OUTPUT); 
+
+  // digitalWrite(lockPin, HIGH); 
+  // digitalWrite(fanPin, HIGH); 
+  // digitalWrite(lightPin, HIGH); 
+  // digitalWrite(waterPumpPin, HIGH); 
+  // digitalWrite(sensorStatusPin, HIGH); 
+  // digitalWrite(TEMPLIMITPIN, HIGH); 
+  // digitalWrite(WATERSENSORPIN, HIGH); 
 
 
-/*MQ2 settup*/
+// /*rest of setup*/
+  Serial.begin(9600);
+  espSerial.begin(9600);
+
+//begin dht sensors
+  // dhtInside.begin();
+  // dhtOutside.begin();
+
+
+}
+
+void loop() {
+  //Read from serial and update data. 
+  // getSerial(); 
+  // getStatus(); 
+  //read all sensor inputs before sending to esp 
+  espSerial.println("Hello");
+  delay(1000);
+
+}
+
+void MQ2Init() {
+  /*MQ2 settup*/
 
   //Set math model to calculate the PPM concentration and the value of constants
   MQ2.setRegressionMethod(1); //_PPM =  a*ratio^b
@@ -111,25 +152,10 @@ void setup() {
   if(calcR0 == 0){Serial.println("Warning: Conection issue found, R0 is zero (Analog pin shorts to ground) please check your wiring and supply"); while(1);}
   /*****************************  MQ CAlibration ********************************************/ 
   MQ2.serialDebug(true);
-
-/*rest of setup*/
-  Serial.begin(9600);
-  espSerial.begin(9600);
-
-  //begin dht sensors
-  dhtInside.begin();
-  dhtOutside.begin();
-
-  //Configure pins
-  pinMode(waterPumpPin, OUTPUT);
-  pinMode(lightPin, OUTPUT);
-  pinMode(fanPin, OUTPUT);
-  pinMode(lockPin, OUTPUT);
 }
 
-void loop() {
-  //Read from serial and update data. 
-  if (espSerial.available() > 0) {
+void getSerial() {
+    if (espSerial.available() > 0) {
     //receive it via json
     char data = espSerial.read();
     switch(data)
@@ -153,6 +179,10 @@ void loop() {
     data = 0;
 
   }
+}
+
+
+void getStatus() {
 
   unsigned int prevTime;
   if(millis() - prevTime >= 1000)
@@ -174,10 +204,14 @@ void loop() {
   // Check if any reads failed and exit early (to try again).
   if (isnan(humInside) || isnan(tempInside) || isnan(humOutside) || isnan(tempOutside)) {
     Serial.println(F("Failed to read from DHT sensor!"));
+    digitalWrite(sensorStatusPin, HIGH);   //if controller is in an infinite loop. 
     return;
   }
-  if((waterLevelSensorValue != 0 && waterLevelSensorValue < 200) || gasSensorValue != 0  ||
-   humInside != 0 || tempOutside != 0)
+  else {
+    digitalWrite(sensorStatusPin, LOW);
+  }
+  if((waterLevelSensorValue != 0 && waterLevelSensorValue < 200) && gasSensorValue != 0  &&
+   humInside != 0 && tempOutside != 0 && humOutside !=0 && tempInside != 0)
   {
     //means all sensors are working 
     digitalWrite(sensorStatusPin, LOW);
@@ -200,7 +234,6 @@ void loop() {
   doc["waterPumpState"] = waterPumpState;
   doc["lightState"] = lightState;
   doc["fanState"] = fanState;
-  doc["toggleAllFlag"] = toggleAllFlag;
   doc["lockState"] = lockState;
   doc["temperatureInside"] = tempInside;
   doc["temperatureOutside"] = tempOutside;
@@ -216,20 +249,4 @@ void loop() {
 
   prevTime = millis(); 
   }
-}
-
-void parseJson(String jsonString) {
-  DynamicJsonDocument jsonDoc(200);
-  DeserializationError error = deserializeJson(jsonDoc, jsonString);
-  if (error) {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.c_str());
-    return;
-  }
-  waterPumpState = jsonDoc["waterPumpState"];
-  lightState = jsonDoc["lightState"];
-  fanState = jsonDoc["fanState"];
-  toggleAllFlag = jsonDoc["toggleAllFlag"];
-  lockState = jsonDoc["lockState"];
-  updated = true; 
 }
