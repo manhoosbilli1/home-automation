@@ -29,7 +29,7 @@ uint8_t lockPin = 8;
 #define sensorStatusPin 6
 #define TEMPLIMITPIN 7
 #define WATERSENSORPIN 5
-
+#define SERIALREADY 2
 //Define variables to store sensor values and appliance states
 uint8_t gasSensorValue;
 uint8_t waterLevelSensorValue;
@@ -62,6 +62,8 @@ DHT dhtOutside(DHTPINOUTSIDE, DHT11);
 MQUnifiedsensor MQ2(Board, Voltage_Resolution, ADC_Bit_Resolution, Pin, Type);
 
 
+unsigned int prevTime;
+
 //declaring the function
 void parseJson(String);
 void getStatus();
@@ -88,15 +90,6 @@ void setup() {
   digitalWrite(lockPin, HIGH);
   digitalWrite(waterPumpPin, HIGH);
   digitalWrite(lightPin, HIGH);
-
-  //  digitalWrite(lightPin, LOW);
-  //  digitalWrite(lockPin, LOW);
-  //  delay(1000);
-  //  digitalWrite(lightPin, HIGH);
-  //  digitalWrite(lockPin, HIGH);
-
-
-  // /*rest of setup*/
 
   //begin dht sensors
   dhtInside.begin();
@@ -166,33 +159,54 @@ void MQ2Init() {
 }
 
 void getSerial() {
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0 && digitalRead(SERIALREADY) == 0) {
     //receive it via json
     char data = Serial.read();
     if (data == '#') {
       data = Serial.read();
       switch (data) {
         case 'A':
-          digitalWrite(fanPin, !digitalRead(fanPin));
-          digitalWrite(fanStatusPin, !digitalRead(fanPin));  //write inverted value to led as that accepts high as 1
-            break;
+          digitalWrite(fanPin, LOW);
+          digitalWrite(fanStatusPin, HIGH);  //write inverted value to led as that accepts high as 1
+          break;
+
+        case 'H':
+          digitalWrite(fanPin, HIGH);
+          digitalWrite(fanStatusPin, LOW);  //write inverted value to led as that accepts high as 1
+          break;
 
         case 'B':
-          digitalWrite(lockPin, !digitalRead(lockPin));
+          digitalWrite(lockPin, LOW);
+          delay(1000); 
+          digitalWrite(lockPin, HIGH); 
 
-            break;
+          break;
+
+        case 'I':
+          digitalWrite(lockPin, HIGH);
+          break;
 
         case 'C':
-          digitalWrite(lightPin, !digitalRead(lightPin));
-          digitalWrite(lightStatusPin, !digitalRead(lightPin));  //write inverted value to led as that accepts high as 1
+          digitalWrite(lightPin, LOW);
+          digitalWrite(lightStatusPin, HIGH);  //write inverted value to led as that accepts high as 1
 
-            break;
+          break;
+
+        case 'F':
+          digitalWrite(lightPin, HIGH);
+          digitalWrite(lightStatusPin, LOW);  //write inverted value to led as that accepts high as 1
+
+          break;
 
         case 'D':
-          digitalWrite(waterPumpPin, !digitalRead(waterPumpPin));
-          digitalWrite(waterPumpStatusPin, !digitalRead(waterPumpPin));  //write inverted value to led as that accepts high as 1
+          digitalWrite(waterPumpPin, LOW);
+          digitalWrite(waterPumpStatusPin, HIGH);  //write inverted value to led as that accepts high as 1
+          break;
 
-            break;
+        case 'E':
+          digitalWrite(waterPumpPin, HIGH);
+          digitalWrite(waterPumpStatusPin, LOW);  //write inverted value to led as that accepts high as 1
+          break;
       }
       data = 0;
     }
@@ -201,8 +215,6 @@ void getSerial() {
 
 
 void getStatus() {
-
-  unsigned int prevTime;
   if (millis() - prevTime >= 1000) {
     //Read sensor values and send data to esp after every 1 second.
     MQ2.update();  // Update data, the arduino will read the voltage from the analog pin
@@ -255,9 +267,13 @@ void getStatus() {
     //Serialize JSON object to a string and send to ESP8266 over software serial
     String jsonString;
     Serial.flush();
+    if(digitalRead(SERIALREADY) == 1)
+    {
     serializeJson(doc, Serial);
+    }
+    Serial.flush();
     // espSerial.println(jsonString);
-    Serial.println(jsonString);
+    // Serial.println(jsonString);
 
     prevTime = millis();
   }
